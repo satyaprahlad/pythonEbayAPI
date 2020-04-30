@@ -15,16 +15,15 @@ def updateToGSheet( data):
 
     client = gspread.authorize(creds)
 
-    sheet1 = client.open("OrderInformationsWork").worksheet("sheet1")  # Open the spreadhseet
-    sheet2 = client.open("OrderInformationsWork").worksheet("sheet2")
+    sheet1 = client.open("OrderInformationsWork").worksheet("sheet1")
 
     eachRow = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
                'Duration']
     #heading
 
-    sheet2.clear()
-    sheet2.append_row(eachRow)
+    sheet1.clear()
+    sheet1.append_row(eachRow)
     allRowsValues = list()
     for i in range(len(data)):
 
@@ -36,8 +35,8 @@ def updateToGSheet( data):
 
     #print("all rows are ",allRowsValues)
 
-    sheet2.append_rows(allRowsValues)
-    sheet2.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    sheet1.append_rows(allRowsValues)
+    sheet1.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
         "green": 0.0,
         "blue": 0.0
@@ -102,8 +101,6 @@ def main():
             print("page number is ",response["PageNumber"])
             print("remaining pages",response["PaginationResult"])
             print("has more number ",response["HasMoreItems"])
-    #paginationResult=response["PaginationResult"]
-    #currentPageNum=response["PageNumber"]
             if response["HasMoreItems"]!="true":
                 break
             inputObj["Pagination"]["PageNumber"] = int(response["PageNumber"]) + 1
