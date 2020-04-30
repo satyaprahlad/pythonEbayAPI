@@ -115,7 +115,7 @@ def main():
             startDateFrom=startDateFrom-datetime.timedelta(90)
         print("iteration number ",i)
 
-    print(items,file=open("1.txt","w"))
+    print(items,file=open("./1.txt","w"))
     updateToGSheet(items)
 
 #print(json.dumps(response,indent=1),file=open("1.txt","w"))
