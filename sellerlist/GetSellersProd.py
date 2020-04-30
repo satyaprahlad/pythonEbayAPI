@@ -89,7 +89,7 @@ def main():
         inputObj["StartTimeFrom"] = startDateFrom
         inputObj["Pagination"]["PageNumber"]=1
 
-        if True:
+        while True:
             print(inputObj)
             print('\n')
             response = api.execute('GetSellerList',inputObj).dict()
