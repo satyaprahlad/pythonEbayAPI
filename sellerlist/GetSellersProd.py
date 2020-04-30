@@ -17,14 +17,16 @@ def updateToGSheet( data):
 
     sheet1 = client.open("OrderInformationsWork").worksheet("sheet1")
 
-    eachRow = ['Title', 'Price', 'Watch',
+    eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
                'Duration']
     #heading
 
-    sheet1.clear()
-    sheet1.append_row(eachRow)
+
+    #sheet1.append_row(eachRow1)
+
     allRowsValues = list()
+    allRowsValues.append(eachRow1)
     for i in range(len(data)):
 
         eachItem = data[i]
@@ -35,12 +37,23 @@ def updateToGSheet( data):
 
     #print("all rows are ",allRowsValues)
 
+    sheet1.clear()
     sheet1.append_rows(allRowsValues)
+
     sheet1.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
         "green": 0.0,
         "blue": 0.0
     }}})
+
+    #
+    # sheet1.format("A"+str(len(allRowsValues))+":F"+str(len(allRowsValues)), {"textFormat": {"bold": False, "fontSize": 10, "foregroundColor": {
+    #     "red": 0.0,""
+    #     "green": 0.0,
+    #     "blue": 0.0
+    # }}})
+
+
 
 def main():
 
@@ -87,14 +100,15 @@ def main():
         inputObj["StartTimeTo"] = startDateTo
         inputObj["StartTimeFrom"] = startDateFrom
         inputObj["Pagination"]["PageNumber"]=1
-
+        print("iteration number ", i)
+        print(inputObj["StartTimeTo"], "  ", inputObj["StartTimeFrom"])
         while True:
-            print(inputObj)
+            #print(inputObj)
+
             print('\n')
             response = api.execute('GetSellerList',inputObj).dict()
-            if(i==2):
-                print("response is ", response)
             if response["ItemArray"] is None:
+                print("no result at i ",i)
                 break
             currentItems=response["ItemArray"]["Item"]
             items.extend(currentItems)
@@ -104,13 +118,11 @@ def main():
             if response["HasMoreItems"]!="true":
                 break
             inputObj["Pagination"]["PageNumber"] = int(response["PageNumber"]) + 1
-        if i==4:
-            startDateTo = startDateTo - datetime.timedelta(6)
-            startDateFrom = startDateFrom - datetime.timedelta(6)
+        if i==3:
+            startDateFrom = startDateFrom - datetime.timedelta(6) #just for last 6 days in 365/366  days
         else:
-            startDateTo=startDateTo-datetime.timedelta(90)
             startDateFrom=startDateFrom-datetime.timedelta(90)
-        print("iteration number ",i)
+        startDateTo = startDateTo - datetime.timedelta(90)
 
     print(items,file=open("1.txt","w"))
     updateToGSheet(items)
