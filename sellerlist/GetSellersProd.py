@@ -18,9 +18,9 @@ def updateToGSheet( data):
     sheet1 = client.open("OrderInformationsWork").worksheet("sheet1")  # Open the spreadhseet
     sheet2 = client.open("OrderInformationsWork").worksheet("sheet2")
 
-    eachRow = ['Title', 'CurrentPrice', 'WatchCount',
-               'QuantitySold', 'CategoryID',
-               'ListingDuration']
+    eachRow = ['Title', 'Price', 'Watch',
+               'Sold', 'CategoryID',
+               'Duration']
     #heading
 
     sheet2.clear()
