@@ -51,9 +51,15 @@ def updateToGSheet( data,error=None):
         "blue": 0.0
     }}})
 
-    sheet1.format("H1:H1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    sheet1.format("H1:I1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 0.0,
         "green": 1.0,
+        "blue": 0.0
+    }}})
+    #reset format
+    sheet1.format("H2:I2", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+        "red": 0.0,
+        "green": 0.0,
         "blue": 0.0
     }}})
 
