@@ -63,15 +63,6 @@ def updateToGSheet( data,error=None):
         "blue": 0.0
     }}})
 
-    #
-    # sheet1.format("A"+str(len(allRowsValues))+":F"+str(len(allRowsValues)), {"textFormat": {"bold": False, "fontSize": 10, "foregroundColor": {
-    #     "red": 0.0,""
-    #     "green": 0.0,
-    #     "blue": 0.0
-    # }}})
-
-
-
 def main():
     try:
 
