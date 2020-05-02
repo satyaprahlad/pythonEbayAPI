@@ -1,3 +1,5 @@
+import json
+
 from ebaysdk.trading import Connection as Trading
 import datetime
 import time
@@ -25,6 +27,7 @@ def updateToGSheet( data,error=None):
         sheet1.clear()
         sheet1.append_row(errors)
         return
+
 
 
     #sheet1.append_row(eachRow1)
@@ -93,7 +96,8 @@ def main():
                                "HasMoreItems",
                                "PageNumber",
                                "ReturnedItemCountActual",
-                                "PaginationResult"
+                               "PaginationResult",
+                               "itemId"
                            ],
                            "Pagination": {
                                "EntriesPerPage": "100",
@@ -116,6 +120,8 @@ def main():
 
                 print('\n')
                 response = api.execute('GetSellerList',inputObj).dict()
+                file=open("1.txt","w")
+                print(response)
                 if response["ItemArray"] is None:
                     print("no result at i ",i)
                     break
@@ -137,7 +143,6 @@ def main():
         updateToGSheet(items)
     except Exception as error:
         updateToGSheet(None,error=error)
-
 #print(json.dumps(response,indent=1),file=open("1.txt","w"))
 #print(int(time.time())-int(startTime))
 
