@@ -37,7 +37,7 @@ def updateToGSheet(data,sellerIdFromSheet,noOfMonths ,error=None):
     #allRowsValues.append(eachRow1)
     for i in range(len(data)):
         eachItem = data[i]
-        print(eachItem)
+        #print(eachItem)
         watchCont=0 if eachItem['listingInfo'].get('watchCount') is None else int(eachItem['listingInfo']['watchCount'])
         QuantitySold=0 if eachItem.get('QuantitySold') is None else int(eachItem['QuantitySold'])
         HitCount=0 if eachItem.get('HitCount') is None else int(eachItem['HitCount'])
@@ -218,7 +218,7 @@ def main():
                     startDateFrom = startDateFrom - datetime.timedelta(90)
                 startDateTo = startDateTo - datetime.timedelta(90)
 
-            print(items, file=open("1.txt", "w"))
+            #print(items, file=open("1.txt", "w"))
             print("total items: ",len(items))
             print("now adding details like hit count and quantity sold")
             updateQuantitySoldEtc(items)
