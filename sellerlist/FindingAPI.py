@@ -9,7 +9,7 @@ import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-def updateToGSheet(data, error=None):
+def updateToGSheet(data,sellerIdFromSheet,noOfMonths ,error=None):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
@@ -18,9 +18,8 @@ def updateToGSheet(data, error=None):
     client = gspread.authorize(creds)
 
     sheet1 = client.open("OrderInformationsWork").worksheet("Output")
-    sellerId,months=getFromSheet()
     allRowsValues = [
-                     ['','','','Seller Details : '+sellerId,'','','Sheet Last Updated at: '+str(datetime.datetime.now())],
+                     ['','','','Seller Details : '+sellerIdFromSheet+' For '+noOfMonths+' Months','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
                      [],
                      ['Title', 'Price', 'Watch',
                 'Sold', 'CategoryID',
@@ -34,9 +33,6 @@ def updateToGSheet(data, error=None):
         sheet1.clear()
         sheet1.append_row(errors)
         return
-
-    # sheet1.append_row(eachRow1)
-
 
     #allRowsValues.append(eachRow1)
     for i in range(len(data)):
@@ -53,13 +49,8 @@ def updateToGSheet(data, error=None):
 
         allRowsValues.append(eachRow)
 
-
-    # print("all rows are ",allRowsValues)
-
     sheet1.clear()
     sheet1.append_rows(allRowsValues)
-
-
 
     sheet1.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
@@ -122,21 +113,22 @@ def updateQuantitySoldEtc(items):
             j=_+20
         inputObj["ItemID"]=list(map(lambda x:x['itemId'],items[_:j]))
 
-        print("before adding sold, hitcount ",items[_:j])
+        #print("before adding sold, hitcount ",items[_:j])
         response = api.execute('GetMultipleItems', inputObj).dict()
-        print("response after executing multiple api call: ",response)
+        #print("response after executing multiple api call: ",response)
         for i in range(len(response['Item'])):
             items[_+i]['QuantitySold']=response['Item'][i]['QuantitySold']
             items[_+i]['HitCount']=response['Item'][i]['HitCount']
         _=j
+        print("remaining items to process ",len(items)-i)
 
     #correcting duration to start and end dates diff
     for item in items:
-        print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
+        #print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
         startTime=datetime.datetime.strptime(item['listingInfo']['startTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
         endTime=datetime.datetime.strptime(item['listingInfo']['endTime'],"%Y-%m-%dT%H:%M:%S.%fZ")
         item['DurationCalc']=(endTime.__sub__(startTime)).days
-        print("duration is , ",item['DurationCalc'])
+        #print("duration is , ",item['DurationCalc'])
 
 
 def main():
@@ -211,7 +203,7 @@ def main():
                         break
                     currentItems = response["searchResult"]["item"]
                     items.extend(currentItems)
-                    print("lenght of items , ", len(items))
+                    #print("lenght of items , ", len(items))
                 #print("page number is ", response["PageNumber"])
                 #print("remaining pages", response["PaginationResult"])
                 #print("has more number ", response["HasMoreItems"])
@@ -230,7 +222,7 @@ def main():
             print("total items: ",len(items))
             print("now adding details like hit count and quantity sold")
             updateQuantitySoldEtc(items)
-            updateToGSheet(items)
+            updateToGSheet(items,sellerIdFromSheet,noOfMonths)
     except Exception as error:
         traceback.print_stack()
         updateToGSheet(None, error=error)
