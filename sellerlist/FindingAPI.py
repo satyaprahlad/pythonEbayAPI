@@ -19,7 +19,7 @@ def updateToGSheet(data,sellerIdFromSheet,noOfMonths ,error=None):
 
     sheet1 = client.open("OrderInformationsWork").worksheet("Output")
     allRowsValues = [
-                     ['','','','Seller Details : '+sellerIdFromSheet+' For '+noOfMonths+' Months','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
+                     ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Months','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
                      [],
                      ['Title', 'Price', 'Watch',
                 'Sold', 'CategoryID',
