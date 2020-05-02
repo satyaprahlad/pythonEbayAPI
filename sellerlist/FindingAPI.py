@@ -95,8 +95,8 @@ def getFromSheet():
 
     client = gspread.authorize(creds)
 
-    sheet1 = client.open("OrderInformationsWork").worksheet("Input")
-    return (sheet1.cell(4,2).value.strip(),int(sheet1.cell(5,2).value))
+    input = client.open("OrderInformationsWork").worksheet("Input")
+    return (input.cell(4,2).value.strip(),int(input.cell(5,2).value))
 
 
 
