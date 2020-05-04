@@ -8,73 +8,71 @@ import time
 import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
 
+sellerIdFromSheet=""
+noOfMonths=""
 
-def updateToGSheet(data,sellerIdFromSheet,noOfMonths ,error=None):
+def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
     creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
-
     client = gspread.authorize(creds)
 
-    sheet1 = client.open("OrderInformationsWork").worksheet("Output")
+    outputSheet = client.open("OrderInformationsWork").worksheet("Output")
     allRowsValues = [
-                     ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Months','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
+                     ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
                      [],
-                     ['Title', 'Price', 'Watch',
-                'Sold', 'CategoryID',
-                'Duration', 'Hit Count' ]]
+                     ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Hit Count' ]]
 
-    # heading
     if (error is not None):
         errors = ['Failed to update sheet with reason : ', str(error), ' at ', str(datetime.datetime.now())]
         print("error with ", error)
+        outputSheet.clear()
+        outputSheet.append_row(errors)
         raise Exception(error)
-        sheet1.clear()
-        sheet1.append_row(errors)
         return
 
     #allRowsValues.append(eachRow1)
-    for i in range(len(data)):
-        eachItem = data[i]
+    for eachItem in data:
         #print(eachItem)
         watchCont=0 if eachItem['listingInfo'].get('watchCount') is None else int(eachItem['listingInfo']['watchCount'])
         QuantitySold=0 if eachItem.get('QuantitySold') is None else int(eachItem['QuantitySold'])
         HitCount=0 if eachItem.get('HitCount') is None else int(eachItem['HitCount'])
-        eachRow = [eachItem['title'], float(eachItem['sellingStatus']['currentPrice']['value']),
+        eachRow = [eachItem.get('title'), float(eachItem['sellingStatus']['currentPrice']['value']),
                    watchCont,
                    QuantitySold,
                    int(eachItem['primaryCategory']['categoryId']),
                    int(eachItem['DurationCalc']),HitCount]
-
         allRowsValues.append(eachRow)
 
-    sheet1.clear()
-    sheet1.append_rows(allRowsValues)
+    outputSheet.clear()
+    outputSheet.append_rows(allRowsValues)
 
-    sheet1.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
-        "red": 1.0,
-        "green": 0.0,
-        "blue": 0.0
-    }}})
-    sheet1.format("A3:I3", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    #For starting heading
+    outputSheet.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
         "green": 0.0,
         "blue": 0.0
     }}})
 
-    sheet1.format("G1:I1", {"textFormat": {"bold": False, "fontSize": 12, "foregroundColor": {
+    #for each attribute
+    outputSheet.format("A3:I3", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+        "red": 1.0,
+        "green": 0.0,
+        "blue": 0.0
+    }}})
+    #to print timestamp at right side of sheet
+    outputSheet.format("G1:I1", {"textFormat": {"bold": False, "fontSize": 12, "foregroundColor": {
         "red": 0.0,
         "green": 1.0,
         "blue": 0.0
     }}})#ok
     # reset format
 
-    sheet1.merge_cells('D1:F1')
-    sheet1.merge_cells('G1:I1')
+    outputSheet.merge_cells('D1:F1')
+    outputSheet.merge_cells('G1:I1')
 
-    inputSheet = client.open("OrderInformationsWork").worksheet("Input")
-    inputSheet.update_cell(4,2,"")# clearing input value so that script will process repeatedly.
+    client.open("OrderInformationsWork").worksheet("Input").update_cell(4,2,"")
+    # clearing input value so that script will not process repeatedly.
 
 
 
@@ -87,26 +85,29 @@ def getFromSheet():
     client = gspread.authorize(creds)
 
     input = client.open("OrderInformationsWork").worksheet("Input")
-    return (input.cell(4,2).value.strip(),int(input.cell(5,2).value))
+    sellerIdFromSheet = input.cell(4,3).value.strip()
+    noOfMonths = int(input.cell(5,2).value)
+    return (sellerIdFromSheet,noOfMonths)
+
+
 
 
 
 def updateQuantitySoldEtc(items):
     #this multiple items api takes at a time 20 itemids only. So calling it repeatedly.
-    api=api = Shopping(config_file=None, domain='open.api.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
+    api = Shopping(config_file=None, domain='open.api.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
                       devid="6c042b69-e90f-4897-9045-060858248665",
                       certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
                       )
 
 
-    inputObj={
-   "ItemID": [],
-   "IncludeSelector": "Details"
+    inputObj={"ItemID": [],"IncludeSelector": "Details"
 }
     j=0
     _=0
+    tic=time.perf_counter()
     while _ < (len(items)):
-        print("_ values is: ",_," , ",j)
+        #print("_ values is: ",_," , ",j)
         if _+20 > len(items):
             j=len(items)
         else:
@@ -117,10 +118,10 @@ def updateQuantitySoldEtc(items):
         response = api.execute('GetMultipleItems', inputObj).dict()
         #print("response after executing multiple api call: ",response)
         for i in range(len(response['Item'])):
-            items[_+i]['QuantitySold']=response['Item'][i]['QuantitySold']
-            items[_+i]['HitCount']=response['Item'][i]['HitCount']
+            items[_+i]['QuantitySold']=response['Item'][i].get('QuantitySold')
+            items[_+i]['HitCount']=response['Item'][i].get('HitCount')
         _=j
-        print("remaining items to process ",len(items)-i)
+        #print("remaining items to process ",len(items)-i)
 
     #correcting duration to start and end dates diff
     for item in items:
@@ -129,9 +130,11 @@ def updateQuantitySoldEtc(items):
         endTime=datetime.datetime.strptime(item['listingInfo']['endTime'],"%Y-%m-%dT%H:%M:%S.%fZ")
         item['DurationCalc']=(endTime.__sub__(startTime)).days
         #print("duration is , ",item['DurationCalc'])
-
+    toc = time.perf_counter()
+    print(f"stopwatch: {toc - tic}")
 
 def main():
+    tic=time.perf_counter()
     try:
 
         api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
@@ -162,8 +165,8 @@ def main():
                 "ReturnedItemCountActual",
                 "PaginationResult"
             ],
-            "StartTimeFrom": "2020-01-30 23:29:25.354049",
-            "StartTimeTo": "2020-04-29 23:29:25.354038",
+            "StartTimeFrom": "",
+            "StartTimeTo": "",
             "IncludeWatchCount": "true",
 
             "paginationInput": {
@@ -182,10 +185,10 @@ def main():
 
             inputObj["itemFilter"]["value"]=sellerIdFromSheet
             queryRepeats=int(noOfMonths/3)
-            if(queryRepeats==0):#one month only
+            if(noOfMonths==1):#one month only
                 queryRepeats=queryRepeats+1
                 startDateFrom = startDateTo - datetime.timedelta(30)
-            if(queryRepeats==4):
+            elif(queryRepeats==4): #need to include (4*90) obvious and 6 days for a year
                 queryRepeats=5
 
             for i in range(queryRepeats):
@@ -194,7 +197,7 @@ def main():
                 inputObj["paginationInput"]["pageNumber"] = 1
                 print("iteration number ", i)
                 print(inputObj["StartTimeTo"], "  ", inputObj["StartTimeFrom"])
-                while True:
+                if True:
 
                     response = api.execute('findItemsAdvanced', inputObj).dict()
                     #print(response)
@@ -222,12 +225,14 @@ def main():
             print("total items: ",len(items))
             print("now adding details like hit count and quantity sold")
             updateQuantitySoldEtc(items)
-            updateToGSheet(items,sellerIdFromSheet,noOfMonths)
+            updateToGSheet(items,None,sellerIdFromSheet,noOfMonths)
     except Exception as error:
         traceback.print_stack()
         updateToGSheet(None, error=error)
 
+    toc=time.perf_counter()
 
+    print(f"time taken {toc-tic}")
 # print(json.dumps(response,indent=1),file=open("1.txt","w"))
 # print(int(time.time())-int(startTime))
 

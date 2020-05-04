@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@hendt/ebay-api@latest/lib/ebay-api.min.js"></script>
+<script>
+  const eBay = new eBayApi({
+    appId: 'appId',
+    certId: 'certId',
+    devId: 'devId',
+
+    sandbox: true,
+    siteId: 77,
+
+    interceptors: {
+      request: (request) => {
+        // Add Proxy
+        request.url = 'https://ebay.hendt.workers.dev/' + request.url;
+        return request;
+      }
+    }
+  });
+
+  eBay.buy.browse.getItem('v1|254188828753|0').then(item => {
+      document.getElementById('response').value = JSON.stringify(item, null, 2)
+  }).catch(e => {
+      document.getElementById('response').value = e.message
+  });
+</script>
+
+
+</head>
+<body>
+<input type="text" id="response"/>
+</body>
+</html>

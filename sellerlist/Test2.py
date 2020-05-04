@@ -1,3 +1,4 @@
+import random
 import traceback
 
 from ebaysdk.finding import Connection as Finding
@@ -9,12 +10,20 @@ import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+# scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+#              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+#
+# creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
+#v
+# client = gspread.authorize(creds)
+#
+# sheet1 = client.open("OrderInformationsWork").worksheet("Input")
+# print(sheet1.cell(4,2).value)
+class MyRandom(random.random):
+    __enter__=
+print(random.random())
+with random.random() as rNumber:
+    for _ in range(10):
+        print(rNumber*100)
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
 
-client = gspread.authorize(creds)
-
-sheet1 = client.open("OrderInformationsWork").worksheet("Input")
-print(sheet1.cell(4,2).value)
