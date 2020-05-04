@@ -1,10 +1,25 @@
 import json
+import logging
+import threading
 
 from ebaysdk.trading import Connection as Trading
+from ebaysdk.shopping import Connection as Shopping
 import datetime
 import time
 import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
+
+thread_local=threading.local()
+
+logging.basicConfig(filename="GetSellar.log",
+
+                    filemode='w')
+
+# Creating an object
+logger = logging.getLogger()
+
+# Setting the threshold of logger to DEBUG
+logger.setLevel(logging.DEBUG)
 
 
 def updateToGSheet( data,error=None):
@@ -19,11 +34,12 @@ def updateToGSheet( data,error=None):
 
     eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
-               'Duration','','Last Updated at: '+str(datetime.datetime.now())]
+               'Duration','Viewed','','Last Updated at: '+str(datetime.datetime.now())]
     #heading
     if (error is not None):
         errors=['Failed to update sheet with reason : ',str(error),' at ',str(datetime.datetime.now())]
         print("error with ",error)
+        logger.debug(error)
         sheet1.clear()
         sheet1.append_row(errors)
         return
@@ -39,7 +55,7 @@ def updateToGSheet( data,error=None):
         eachItem = data[i]
         print(eachItem)
         eachRow = [eachItem['Title'], float(eachItem['SellingStatus']['CurrentPrice']['value']), int(eachItem['WatchCount']),
-                   int(eachItem['SellingStatus']['QuantitySold']), int(eachItem['PrimaryCategory']['CategoryID']), eachItem['ListingDuration']]
+                   int(eachItem['SellingStatus']['QuantitySold']), int(eachItem['PrimaryCategory']['CategoryID']), eachItem['ListingDuration'],eachItem['HitCount']]
 
         allRowsValues.append(eachRow)
 
@@ -48,7 +64,7 @@ def updateToGSheet( data,error=None):
     sheet1.clear()
     sheet1.append_rows(allRowsValues)
 
-    sheet1.format("A1:F1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    sheet1.format("A1:G1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
         "green": 0.0,
         "blue": 0.0
@@ -65,6 +81,65 @@ def updateToGSheet( data,error=None):
         "green": 0.0,
         "blue": 0.0
     }}})
+
+
+def get_session():
+    if not hasattr(thread_local, "api"):
+        thread_local.api = Shopping(config_file=None, domain='open.api.ebay.com',
+                                    appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
+                                    devid="6c042b69-e90f-4897-9045-060858248665",
+                                    certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
+                                    )
+    return thread_local.api
+
+def getGood(items):
+    logger.debug("shopping")
+
+    inputObj = {"ItemID": [], "IncludeSelector": "Details"}
+    inputObjects = []
+    j = 0
+    _ = 0
+    for item in items:
+        # print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
+        startTime = datetime.datetime.strptime(item['ListingDetails']['StartTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        endTime = datetime.datetime.strptime(item['ListingDetails']['EndTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        item['DurationCalc'] = (endTime.__sub__(startTime)).days
+        item['HitCount']=0
+    tic = time.perf_counter()
+    while _ < (len(items)):
+        # print("_ values is: ",_," , ",j)
+        if _ + 20 > len(items):
+            j = len(items)
+        else:
+            j = _ + 20
+        inputObj["ItemID"] = list(map(lambda x: x['ItemID'], items[_:j]))
+
+        # print("before adding sold, hitcount ",items[_:j])
+        try:
+            response = get_session().execute('GetMultipleItems', inputObj).dict()
+        # print("response after executing multiple api call: ",response)
+
+        except ConnectionError as err:
+            logger.debug("got exception while getmultipleitems",exc_info=True)
+            print("exception at connection")
+            break
+        except:
+            print("exception at connection")
+            logger.exception("got exeption not ConnectionError")
+            break
+        else:
+            for i in range(len(response['Item'])):
+                items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
+        _ = j
+        # print("remaining items to process ",len(items)-i)
+    # correcting duration to start and end dates diff
+        # print("duration is , ",item['DurationCalc'])
+    toc = time.perf_counter()
+    logger.debug(f"stopwatch: {toc-tic}")
+
+    logger.debug(f"lengthof input {len(inputObjects)}")
+
+
 
 def main():
     try:
@@ -97,7 +172,9 @@ def main():
                                "PageNumber",
                                "ReturnedItemCountActual",
                                "PaginationResult",
-                               "itemId"
+                               "itemId",
+                               "HitCount",
+                               "HitCounter"
                            ],
                            "Pagination": {
                                "EntriesPerPage": "100",
@@ -114,14 +191,14 @@ def main():
             inputObj["StartTimeFrom"] = startDateFrom
             inputObj["Pagination"]["PageNumber"]=1
             print("iteration number ", i)
-            print(inputObj["StartTimeTo"], "  ", inputObj["StartTimeFrom"])
+            #print(inputObj["StartTimeTo"], "  ", inputObj["StartTimeFrom"])
             while True:
             #print(inputObj)
 
                 print('\n')
                 response = api.execute('GetSellerList',inputObj).dict()
                 file=open("1.txt","w")
-                print(response)
+                #print(response)
                 if response["ItemArray"] is None:
                     print("no result at i ",i)
                     break
@@ -140,6 +217,7 @@ def main():
             startDateTo = startDateTo - datetime.timedelta(90)
 
         print(items,file=open("1.txt","w"))
+        getGood(items)
         updateToGSheet(items)
     except Exception as error:
         updateToGSheet(None,error=error)
