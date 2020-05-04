@@ -1,3 +1,4 @@
+import copy
 import traceback
 import concurrent.futures
 from ebaysdk.finding import Connection as Finding
@@ -146,6 +147,21 @@ def getFromSheet():
     return (sellerIdFromSheet,noOfMonths)
 
 
+thread_local_FindingApi_Session=threading.local()
+def getFindingApiSession():
+    if not hasattr(thread_local_FindingApi_Session,"api"):
+        thread_local_FindingApi_Session.api=Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
+                  devid="6c042b69-e90f-4897-9045-060858248665",
+                  certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
+                  )
+    return thread_local_FindingApi_Session.api
+
+def retrieveFromSecondPage(inputObj):
+    api=getFindingApiSession()
+    response = api.execute('findItemsAdvanced', inputObj).dict()
+    print(f" thread name {threading.currentThread().name } result is : {response}")
+    return response
+
 
 def main():
     api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
@@ -188,6 +204,7 @@ def main():
         }
     }
 
+
     startDateTo = datetime.datetime.now()
     startDateFrom = startDateTo - datetime.timedelta(90)
     sellerIdFromSheet, noOfMonths = getFromSheet();
@@ -202,44 +219,56 @@ def main():
             startDateFrom = startDateTo - datetime.timedelta(30)
         elif (queryRepeats == 4):  # need to include (4*90) obvious and 6 days for a year
             queryRepeats = 5
-
+        tic=time.perf_counter()
         for i in range(queryRepeats):
             inputObj["StartTimeTo"] = startDateTo
             inputObj["StartTimeFrom"] = startDateFrom
             inputObj["paginationInput"]["pageNumber"] = 1
             print("iteration number ", i)
             print(inputObj["StartTimeTo"], "  ", inputObj["StartTimeFrom"])
-            while True:
-
-                response = api.execute('findItemsAdvanced', inputObj).dict()
+            response = api.execute('findItemsAdvanced', inputObj).dict()
                 # print(response)
-                if response["searchResult"] is None:
-                    print("no result at i ", i)
-                    break
-                currentItems = response["searchResult"]["item"]
-                items.extend(currentItems)
+            if response["searchResult"] is None:
+                print("no result at i ", i)
+                break
+            currentItems = response["searchResult"]["item"]
+            items.extend(currentItems)
                 # print("lenght of items , ", len(items))
                 # print("page number is ", response["PageNumber"])
                 # print("remaining pages", response["PaginationResult"])
                 # print("has more number ", response["HasMoreItems"])
-                remainingPages = int(response["paginationOutput"]["totalPages"]) - int(
+            remainingPages = int(response["paginationOutput"]["totalPages"]) - int(
                     response["paginationOutput"]["pageNumber"])
 
-                if remainingPages == 0:
-                    break
-                inputObj["paginationInput"]["pageNumber"] = int(response["paginationOutput"]["pageNumber"]) + 1
-            if i == 3:
-                startDateFrom = startDateFrom - datetime.timedelta(6)  # just for last 6 days in 365/366  days
-            else:
-                startDateFrom = startDateFrom - datetime.timedelta(90)
+            if remainingPages == 0:
+                break
+            print("remaining pages: ",remainingPages)
+            multiThreadInputObjects=[copy.deepcopy(inputObj) for _ in range(remainingPages)]
+            for i in range(remainingPages):
+                multiThreadInputObjects[i]["paginationInput"]["pageNumber"]=i+2
+            print(multiThreadInputObjects)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max(5,remainingPages/2)) as executor:
+                searchResults=[]
+                searchResults=executor.map(retrieveFromSecondPage,multiThreadInputObjects)
+                print("underr multithread")
+                for searchResult in searchResults:
+
+                    items.extend(searchResult["searchResult"]["item"])
+
+            # if i == 3:
+            #     startDateFrom = startDateFrom - datetime.timedelta(6)  # just for last 6 days in 365/366  days
+            # else:
+            startDateFrom = startDateFrom - datetime.timedelta(90)
             startDateTo = startDateTo - datetime.timedelta(90)
 
         # print(items, file=open("1.txt", "w"))
-        print("total items: ", len(items))
+        toc=time.perf_counter()
+        print(f"search took {toc-tic} time with items: {len(items)}")
+
         getGood(items)
         print("now adding details like hit count and quantity sold")
 
-
+g
 
 
 
