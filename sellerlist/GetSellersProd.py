@@ -15,7 +15,7 @@ def updateToGSheet( data,error=None):
 
     client = gspread.authorize(creds)
 
-    sheet1 = client.open("OrderInformationsWork").worksheet("sheet1")
+    sheet1 = client.open("OrderInformationsWork").worksheet("aroundmountain")
 
     eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
