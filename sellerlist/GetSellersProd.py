@@ -1,5 +1,7 @@
 import logging
 import threading
+import traceback
+
 from ebaysdk.trading import Connection as Trading
 from ebaysdk.shopping import Connection as Shopping
 import datetime
@@ -97,7 +99,9 @@ def getGood(items):
             response = get_session().execute('GetMultipleItems', inputObj).dict()
         except ConnectionError as err:
             logger.debug("got exception while getmultipleitems",exc_info=True)
+            traceback.print_exc()
             print("exception at connection")
+            traceback.print_exc()
             break
         except:
             print("exception at connection")
