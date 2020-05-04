@@ -33,5 +33,5 @@ jobs:
     - name: Ebay Items
       run: |
          cd sellerlist
-         python FindingAPI.py
+         python GetSellersProd.py
 

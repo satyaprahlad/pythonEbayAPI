@@ -170,7 +170,7 @@ def main():
 
                 print('\n')
                 response = api.execute('GetSellerList',inputObj).dict()
-                file=open("1.txt","w")
+                #file=open("1.txt","w")
                 #print(response)
                 if response["ItemArray"] is None:
                     print("no result at i ",i)
