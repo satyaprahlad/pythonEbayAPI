@@ -1,5 +1,4 @@
 import copy
-import traceback
 import concurrent.futures
 from sys import exc_info
 
@@ -15,17 +14,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 thread_local=threading.local()
 
-logging.basicConfig(filename="newfile.log",
+logging.basicConfig(filename="FindAPI.log",
 
                     filemode='w')
-
 # Creating an object
 logger = logging.getLogger()
-
 # Setting the threshold of logger to DEBUG
 logger.setLevel(logging.DEBUG)
-
-
 
 def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
@@ -88,7 +83,13 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     outputSheet.merge_cells('D1:F1')
     outputSheet.merge_cells('G1:I1')
 
-    client.open("OrderInformationsWork").worksheet("Input").update_cell(4,2,"")
+    inputSheet=client.open("OrderInformationsWork").worksheet("Input")
+
+    inputSheet.format("B4:B4", {"textFormat": {"bold": False, "fontSize": 12, "backgroundColor": {
+        "red": 1.0,
+        "green": 0.8,
+        "blue": 0.3
+    }}})
     # clearing input value so that script will not process repeatedly.
 
 def get_session():
@@ -99,7 +100,6 @@ def get_session():
                                     certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
                                     )
     return thread_local.api
-shoppingApiResults={}
 
 def shoppingAPIUse(inputObj):
     shoppingAPI = get_session()
@@ -119,7 +119,7 @@ def getFromSheet():
     client = gspread.authorize(creds)
 
     input = client.open("OrderInformationsWork").worksheet("Input")
-    sellerIdFromSheet = input.cell(4,3).value.strip()
+    sellerIdFromSheet = input.cell(4,2).value.strip()
     noOfMonths = int(input.cell(5,2).value)
     return (sellerIdFromSheet,noOfMonths)
 
@@ -286,10 +286,10 @@ def getGood(items):
 
         except ConnectionError as err:
             logger.debug("got exception while getmultipleitems",exc_info=True)
-            print("exception at connection",exc_info=True)
+            print("exception at connection",err)
             break
         except:
-            print("exception at connection",exc_info=True)
+            print("exception at connection")
             logger.exception("got exeption not ConnectionError")
             break
         else:
@@ -302,16 +302,7 @@ def getGood(items):
         # print("duration is , ",item['DurationCalc'])
     toc = time.perf_counter()
     logger.debug(f"stopwatch: {toc-tic}")
-
     logger.debug(f"lengthof input {len(inputObjects)}")
-
-
-    #results = [executor.submit(shoppingAPIUse, inputObject) for inputObject in inputObjects]
-    #for future in results:yield future.result()
-    #          try:
-    #              yield future.result()
-    #          except:
-    #              traceback.print_exc()
 
 
 if __name__ == "__main__":

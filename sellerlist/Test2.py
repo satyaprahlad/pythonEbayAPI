@@ -10,20 +10,19 @@ import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-# scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-#              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-#
-# creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
-#v
-# client = gspread.authorize(creds)
-#
-# sheet1 = client.open("OrderInformationsWork").worksheet("Input")
-# print(sheet1.cell(4,2).value)
-class MyRandom(random.random):
-    __enter__=
-print(random.random())
-with random.random() as rNumber:
-    for _ in range(10):
-        print(rNumber*100)
+scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+
+creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
+
+client = gspread.authorize(creds)
+
+sheet1 = client.open("OrderInformationsWork").worksheet("Input")
+sheet1.update_cell(4,2,"")
+sheet1.format("B4:B4", {"backgroundColor": {
+    "red": 1.0,
+    "green": 0.8,
+    "blue": 0.3
+},"textFormat": {"bold": False, "fontSize": 12, }})
 
 

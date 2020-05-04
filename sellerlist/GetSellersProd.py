@@ -1,23 +1,15 @@
-import json
 import logging
 import threading
-
 from ebaysdk.trading import Connection as Trading
 from ebaysdk.shopping import Connection as Shopping
 import datetime
 import time
 import gspread.client
 from oauth2client.service_account import ServiceAccountCredentials
-
 thread_local=threading.local()
-
 logging.basicConfig(filename="GetSellar.log",
-
-                    filemode='w')
-
-# Creating an object
+                    filemode='w')# Creating an object
 logger = logging.getLogger()
-
 # Setting the threshold of logger to DEBUG
 logger.setLevel(logging.DEBUG)
 
@@ -25,42 +17,29 @@ logger.setLevel(logging.DEBUG)
 def updateToGSheet( data,error=None):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
     creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
-
     client = gspread.authorize(creds)
-
     sheet1 = client.open("OrderInformationsWork").worksheet("aroundmountain")
-
     eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
                'Duration','Viewed','','Last Updated at: '+str(datetime.datetime.now())]
     #heading
     if (error is not None):
-        errors=['Failed to update sheet with reason : ',str(error),' at ',str(datetime.datetime.now())]
+        errors=['Failed to update sheet with reason : '+str(error)+' at '+str(datetime.datetime.now())]
         print("error with ",error)
         logger.debug(error)
         sheet1.clear()
         sheet1.append_row(errors)
         return
-
-
-
-    #sheet1.append_row(eachRow1)
-
     allRowsValues = list()
     allRowsValues.append(eachRow1)
-    for i in range(len(data)):
-
-        eachItem = data[i]
-        print(eachItem)
+    for eachItem in data:
+        #print(eachItem)
         eachRow = [eachItem['Title'], float(eachItem['SellingStatus']['CurrentPrice']['value']), int(eachItem['WatchCount']),
                    int(eachItem['SellingStatus']['QuantitySold']), int(eachItem['PrimaryCategory']['CategoryID']), eachItem['ListingDuration'],eachItem['HitCount']]
-
         allRowsValues.append(eachRow)
 
     #print("all rows are ",allRowsValues)
-
     sheet1.clear()
     sheet1.append_rows(allRowsValues)
 
@@ -104,7 +83,8 @@ def getGood(items):
         startTime = datetime.datetime.strptime(item['ListingDetails']['StartTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
         endTime = datetime.datetime.strptime(item['ListingDetails']['EndTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
         item['DurationCalc'] = (endTime.__sub__(startTime)).days
-        item['HitCount']=0
+        if item.get('HitCount') is None:
+            item['HitCount']=0
     tic = time.perf_counter()
     while _ < (len(items)):
         # print("_ values is: ",_," , ",j)
@@ -113,12 +93,8 @@ def getGood(items):
         else:
             j = _ + 20
         inputObj["ItemID"] = list(map(lambda x: x['ItemID'], items[_:j]))
-
-        # print("before adding sold, hitcount ",items[_:j])
         try:
             response = get_session().execute('GetMultipleItems', inputObj).dict()
-        # print("response after executing multiple api call: ",response)
-
         except ConnectionError as err:
             logger.debug("got exception while getmultipleitems",exc_info=True)
             print("exception at connection")
@@ -131,12 +107,9 @@ def getGood(items):
             for i in range(len(response['Item'])):
                 items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
         _ = j
-        # print("remaining items to process ",len(items)-i)
-    # correcting duration to start and end dates diff
-        # print("duration is , ",item['DurationCalc'])
+
     toc = time.perf_counter()
     logger.debug(f"stopwatch: {toc-tic}")
-
     logger.debug(f"lengthof input {len(inputObjects)}")
 
 
@@ -216,7 +189,7 @@ def main():
                 startDateFrom=startDateFrom-datetime.timedelta(90)
             startDateTo = startDateTo - datetime.timedelta(90)
 
-        print(items,file=open("1.txt","w"))
+        #print(items,file=open("1.txt","w"))
         getGood(items)
         updateToGSheet(items)
     except Exception as error:
