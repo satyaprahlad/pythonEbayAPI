@@ -29,6 +29,7 @@ def updateToGSheet( data,error=None):
     if (error is not None):
         errors=['Failed to update sheet with reason : '+str(error)+' at '+str(datetime.datetime.now())]
         print("error with ",error)
+        print()
         logger.debug(error)
         sheet1.clear()
         sheet1.append_row(errors)
@@ -105,6 +106,7 @@ def getGood(items):
             break
         except:
             print("exception at connection")
+            traceback.print_exc()
             logger.exception("got exeption not ConnectionError")
             break
         else:
