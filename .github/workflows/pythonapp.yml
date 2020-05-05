@@ -5,7 +5,7 @@ name: SingleSeller
 
 on:
   schedule:
-   - cron:  '*/3 * * * *'
+   - cron:  '*/59 * * * *'
 
 jobs:
   build:

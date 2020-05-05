@@ -255,6 +255,7 @@ def main():
 def getGood(items):
     logger.debug("shopping")
 
+
     inputObj = {"ItemID": [], "IncludeSelector": "Details"}
     inputObjects = []
     j = 0
@@ -266,6 +267,7 @@ def getGood(items):
         item['DurationCalc'] = (endTime.__sub__(startTime)).days
         item['QuantitySold']=0
         item['HitCount']=0
+        logger.debug(item['itemId'])
     tic = time.perf_counter()
     while _ < (len(items)):
         # print("_ values is: ",_," , ",j)
