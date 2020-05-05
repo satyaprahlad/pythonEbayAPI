@@ -31,7 +31,7 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
     client = gspread.authorize(creds)
 
-    outputSheet = client.open("OrderInformationsWork").worksheet("Output2")
+    outputSheet = client.open("OrderInformationsWork").worksheet("Output")
     allRowsValues = [
                      ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()],
                      [],
