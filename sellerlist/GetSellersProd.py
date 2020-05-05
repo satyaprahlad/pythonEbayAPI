@@ -2,6 +2,7 @@ import logging
 import sys
 import threading
 import traceback
+import getpass
 
 from ebaysdk.trading import Connection as Trading
 from ebaysdk.shopping import Connection as Shopping
@@ -25,7 +26,7 @@ def updateToGSheet( data,error=None):
     sheet1 = client.open("OrderInformationsWork").worksheet("aroundmountain")
     eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
-               'Duration','Viewed','','Last Updated at: '+str(datetime.datetime.now())]
+               'Duration','Viewed','','Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()]
     #heading
     if (error is not None):
         errors=['Failed to update sheet with reason : '+str(error)+' at '+str(datetime.datetime.now())]
