@@ -35,6 +35,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 #     print("none")
 #     print(ages[person])
 print(getpass.getuser())
+print(type([])==list)
 
 
 # import traceback

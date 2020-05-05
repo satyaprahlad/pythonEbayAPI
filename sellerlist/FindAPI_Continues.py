@@ -137,6 +137,11 @@ def retrieveFromSecondPage(inputObj):
 
 
 def main():
+    while True:
+        submain()
+        time.sleep(100)
+
+def submain():
     api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
                   devid="6c042b69-e90f-4897-9045-060858248665",
                   certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
