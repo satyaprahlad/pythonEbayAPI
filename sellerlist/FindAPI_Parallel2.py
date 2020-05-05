@@ -1,5 +1,6 @@
 import copy
 import concurrent.futures
+import sys
 from sys import exc_info
 
 from ebaysdk.finding import Connection as Finding
@@ -14,9 +15,10 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 thread_local=threading.local()
 
-logging.basicConfig(filename="FindAPI.log",
-
-                    filemode='w')
+# logging.basicConfig(filename="FindAPI.log",
+#
+#                     filemode='w')
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # Creating an object
 logger = logging.getLogger()
 # Setting the threshold of logger to DEBUG
