@@ -5,8 +5,7 @@ name: Python application
 
 on:
   schedule:
-   - cron:  '* */12 * * *'
-  
+   - cron:  '*/3 * * * *'
 
 jobs:
   build:

@@ -199,6 +199,7 @@ def main():
         getGood(items)
         updateToGSheet(items)
     except Exception as error:
+        traceback.print_exc()
         updateToGSheet(None,error=error)
 #print(json.dumps(response,indent=1),file=open("1.txt","w"))
 #print(int(time.time())-int(startTime))
