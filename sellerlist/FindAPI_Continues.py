@@ -16,14 +16,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 thread_local=threading.local()
 
-logging.basicConfig(filename="FindAPI.log",
+#logging.basicConfig(filename="FindAPI.log",
 
-                    filemode='w')
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+ #                   filemode='w')
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 # Creating an object
 logger = logging.getLogger()
 # Setting the threshold of logger to DEBUG
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
@@ -35,11 +35,11 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     allRowsValues = [
                      ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()],
                      [],
-                     ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Viewed' ]]
+                     ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Viewed','TimeLeft To de list' ]]
 
     if (error is not None):
         errors = ['Failed to update sheet with reason : ', str(error), ' at ', str(datetime.datetime.now())]
-        logger.debug(f"error with {error}")
+        logger.exception(f"error with {error}")
         outputSheet.clear()
         outputSheet.append_row(errors)
         raise Exception(error)
@@ -132,16 +132,16 @@ def getFindingApiSession():
 def retrieveFromSecondPage(inputObj):
     api=getFindingApiSession()
     response = api.execute('findItemsAdvanced', inputObj).dict()
-    logger.debug(f" thread name {threading.currentThread().name } result is : {response}")
+    logger.info(f" thread name {threading.currentThread().name } result is : {response}")
     return response
 
 
 def main():
     while True:
-        submain()
+        ebayFunction()
         time.sleep(100)
 
-def submain():
+def ebayFunction():
     api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
                   devid="6c042b69-e90f-4897-9045-060858248665",
                   certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
@@ -186,8 +186,8 @@ def submain():
     startDateTo = datetime.datetime.now()
     startDateFrom = startDateTo - datetime.timedelta(15)
     sellerIdFromSheet, noOfMonths = getFromSheet();
-    logger.debug(f"seller id fro sheet  {sellerIdFromSheet}")
-    logger.debug(f"no of months {str(noOfMonths)}")
+    logger.info(f"seller id fro sheet  {sellerIdFromSheet}")
+    logger.info(f"no of months {str(noOfMonths)}")
     if sellerIdFromSheet is not None and len(sellerIdFromSheet) > 0:
 
         inputObj["itemFilter"]["value"] = sellerIdFromSheet
@@ -202,12 +202,12 @@ def submain():
             inputObj["StartTimeTo"] = startDateTo
             inputObj["StartTimeFrom"] = startDateFrom
             inputObj["paginationInput"]["pageNumber"] = 1
-            logger.debug(f"iteration number {i}")
-            logger.debug(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
+            logger.info(f"iteration number {i}")
+            logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
             response = api.execute('findItemsAdvanced', inputObj).dict()
 
             if response["searchResult"] is None:
-                logger.debug(f"no result at i {i}")
+                logger.info(f"no result at i {i}")
                 break
             currentItems = response["searchResult"]["item"]
             items.extend(currentItems)
@@ -220,17 +220,17 @@ def submain():
 
             if remainingPages == 0:
                 break
-            logger.debug(f"remaining pages: {remainingPages}")
+            logger.info(f"remaining pages: {remainingPages}")
             # query allows only upto max 100 pages
             remainingPages=min(99,remainingPages)
             multiThreadInputObjects=[copy.deepcopy(inputObj) for _ in range(remainingPages)]
             for i in range(remainingPages):
                 multiThreadInputObjects[i]["paginationInput"]["pageNumber"]=i+2
-            logger.debug(multiThreadInputObjects)
+            #logger.debug(multiThreadInputObjects)
             with concurrent.futures.ThreadPoolExecutor(max_workers=max(5,remainingPages/20)) as executor:
                 searchResults=[]
                 searchResults=executor.map(retrieveFromSecondPage,multiThreadInputObjects)
-                logger.debug("underr multithread")
+                logger.info("underr multithread")
                 for searchResult in searchResults:
 
                     items.extend(searchResult["searchResult"]["item"])
@@ -251,15 +251,15 @@ def submain():
             #item['DurationCalc']= (endTime.__sub__(startTime)).days
             item['DurationCalc'] = (endTime.__sub__(startTime)).days
         toc=time.perf_counter()
-        logger.debug(f"search took {toc-tic} time with items: {len(items)}")
-
+        logger.info(f"search took {toc-tic} time with items: {len(items)}")
+        logger.info("now adding details like hit count and quantity sold")
         getGood(items)
-        logger.debug("now adding details like hit count and quantity sold")
-        updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
 
+        updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
+        logger.info("completed")
 
 def getGood(items):
-    logger.debug("shopping")
+    logger.info("shopping")
 
 
     inputObj = {"ItemID": [], "IncludeSelector": "Details"}
@@ -273,10 +273,10 @@ def getGood(items):
         item['DurationCalc'] = (endTime.__sub__(startTime)).days
         item['QuantitySold']=0
         item['HitCount']=0
-        logger.debug(item['itemId'])
+        logger.info(item['itemId'])
     tic = time.perf_counter()
     while _ < (len(items)):
-        # print("_ values is: ",_," , ",j)
+        logger.info(f"{_} out of {len(items)}")
         if _ + 20 > len(items):
             j = len(items)
         else:
@@ -289,8 +289,9 @@ def getGood(items):
         # print("response after executing multiple api call: ",response)
 
         except ConnectionError as err:
-            logger.debug("got exception while getmultipleitems",exc_info=True)
+            logger.info("got exception while getmultipleitems",exc_info=True)
             print("exception at connection",err)
+            print(err.response().dict())
             break
         except:
             print("exception at connection")
@@ -302,8 +303,10 @@ def getGood(items):
                     items[_ + i]['QuantitySold'] = response['Item'][i].get('QuantitySold')
                     items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
             elif type(response.get('Item')) == dict:
-                    items[_]['QuantitySold'] = response['Item'][i].get('QuantitySold')
-                    items[_]['HitCount'] = response['Item'][i].get('HitCount')
+                    print(items[_:j])
+                    print(response['Item'])
+                    items[_]['QuantitySold'] = response['Item'].get('QuantitySold')
+                    items[_]['HitCount'] = response['Item'].get('HitCount')
             else:
                 print("Din't get any response due to time out.")
                 print(response.get('Errors'))
@@ -314,8 +317,8 @@ def getGood(items):
     # correcting duration to start and end dates diff
         # print("duration is , ",item['DurationCalc'])
     toc = time.perf_counter()
-    logger.debug(f"stopwatch: {toc-tic}")
-    logger.debug(f"lengthof input {len(inputObjects)}")
+    logger.info(f"stopwatch: {toc-tic}")
+    logger.info(f"lengthof input {len(inputObjects)}")
 
 
 if __name__ == "__main__":
