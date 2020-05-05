@@ -196,6 +196,7 @@ def main():
             startDateTo = startDateTo - datetime.timedelta(90)
 
         #print(items,file=open("1.txt","w"))
+        print("setting hitcount etc")
         getGood(items)
         updateToGSheet(items)
     except Exception as error:
