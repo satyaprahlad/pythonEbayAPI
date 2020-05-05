@@ -1,4 +1,5 @@
 import logging
+import sys
 import threading
 import traceback
 
@@ -207,6 +208,7 @@ def main():
         updateToGSheet(items)
     except Exception as error:
         traceback.print_exc()
+        print(sys.exc_info())
         updateToGSheet(None,error=error)
 #print(json.dumps(response,indent=1),file=open("1.txt","w"))
 #print(int(time.time())-int(startTime))
