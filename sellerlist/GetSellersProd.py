@@ -113,7 +113,10 @@ def getGood(items):
             if response.get('Item') is not None:
                 for i in range(len(response['Item'])):
                     items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
-            else:break
+            else:
+                print("Din't get any response due to time out.")
+                print(response.get('Errors'))
+                break
         _ = j
 
     toc = time.perf_counter()
