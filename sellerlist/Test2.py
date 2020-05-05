@@ -1,5 +1,7 @@
+import os
 import random
 import traceback
+import getpass
 
 from ebaysdk.finding import Connection as Finding
 from ebaysdk.shopping import Connection as Shopping
@@ -32,10 +34,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 # if age is None:
 #     print("none")
 #     print(ages[person])
-import traceback
+print(getpass.getuser())
 
-try:
-    1/0
-except Exception as err:
-    print(err)
-    traceback.print_exc()
+
+# import traceback
+#
+# try:
+#     1/0
+# except Exception as err:
+#     print(err)
+#     traceback.print_exc()

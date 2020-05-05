@@ -1,5 +1,6 @@
 import copy
 import concurrent.futures
+import getpass
 import sys
 from sys import exc_info
 
@@ -32,7 +33,7 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
 
     outputSheet = client.open("OrderInformationsWork").worksheet("Output2")
     allRowsValues = [
-                     ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())],
+                     ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()],
                      [],
                      ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Viewed' ]]
 
@@ -75,7 +76,7 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
         "blue": 0.0
     }}})
     #to print timestamp at right side of sheet
-    outputSheet.format("G1:I1", {"textFormat": {"bold": False, "fontSize": 12, "foregroundColor": {
+    outputSheet.format("I1:M1", {"textFormat": {"bold": False, "fontSize": 12, "foregroundColor": {
         "red": 0.0,
         "green": 1.0,
         "blue": 0.0
