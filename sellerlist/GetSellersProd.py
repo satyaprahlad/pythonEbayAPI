@@ -83,6 +83,7 @@ def getGood(items):
     j = 0
     _ = 0
     for item in items:
+        item=dict(item)
         print(f"item type{type(item)} and {item.get('HitCount')}")
         # print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
         startTime = datetime.datetime.strptime(item['ListingDetails']['StartTime'], "%Y-%m-%dT%H:%M:%S.%fZ")

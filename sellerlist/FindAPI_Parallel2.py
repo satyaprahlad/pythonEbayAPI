@@ -90,6 +90,7 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     "green": 0.8,
     "blue": 0.3
     },"textFormat": {"bold": False, "fontSize": 12}})
+    inputSheet.update_cell(4,2,"")
     # clearing input value so that script will not process repeatedly.
 
 def get_session():
