@@ -83,10 +83,11 @@ def getGood(items):
     j = 0
     _ = 0
     for item in items:
-
-        # startTime = datetime.datetime.strptime(item['ListingDetails']['StartTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        # endTime = datetime.datetime.strptime(item['ListingDetails']['EndTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        # item['DurationCalc'] = (endTime.__sub__(startTime)).days
+        print(f"item type{type(item)} and {item.get('HitCount')}")
+        # print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
+        startTime = datetime.datetime.strptime(item['ListingDetails']['StartTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        endTime = datetime.datetime.strptime(item['ListingDetails']['EndTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        item['DurationCalc'] = (endTime.__sub__(startTime)).days
         if item.get('HitCount') is None:
             item['HitCount']=0
     tic = time.perf_counter()
