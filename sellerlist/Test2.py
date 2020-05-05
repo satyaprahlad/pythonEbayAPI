@@ -23,12 +23,19 @@ from oauth2client.service_account import ServiceAccountCredentials
 #     "red": 1.0,
 #     "green": 0.8,
 #     "blue": 0.3
-# },"textFormat": {"bold": False, "fontSize": 12, }})
+#  },"textFormat": {"bold": False, "fontSize": 12, }})
+#
+#
+# ages = {'Jim': 30, 'Pam': 28, 'Kevin': 33}
+# person = input('Get age for: ')
+# age = ages.get(person)
+# if age is None:
+#     print("none")
+#     print(ages[person])
+import traceback
 
-
-ages = {'Jim': 30, 'Pam': 28, 'Kevin': 33}
-person = input('Get age for: ')
-age = ages.get(person)
-if age is None:
-    print("none")
-    print(ages[person])
+try:
+    1/0
+except Exception as err:
+    print(err)
+    traceback.print_exc()

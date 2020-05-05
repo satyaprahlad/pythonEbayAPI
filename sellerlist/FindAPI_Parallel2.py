@@ -52,8 +52,8 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
                    watchCont,
                    QuantitySold,
                    int(eachItem['primaryCategory']['categoryId']),
-                   #int(eachItem.get('DurationCalc'))
-            0,HitCount]
+                   int(eachItem.get('DurationCalc'))
+            ,HitCount]
         allRowsValues.append(eachRow)
 
     outputSheet.clear()
@@ -85,11 +85,11 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
 
     inputSheet=client.open("OrderInformationsWork").worksheet("Input")
 
-    inputSheet.format("B4:B4", {"textFormat": {"bold": False, "fontSize": 12, "backgroundColor": {
-        "red": 1.0,
-        "green": 0.8,
-        "blue": 0.3
-    }}})
+    inputSheet.format("B4:B4", {"backgroundColor": {
+    "red": 1.0,
+    "green": 0.8,
+    "blue": 0.3
+    },"textFormat": {"bold": False, "fontSize": 12}})
     # clearing input value so that script will not process repeatedly.
 
 def get_session():
@@ -100,14 +100,6 @@ def get_session():
                                     certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
                                     )
     return thread_local.api
-
-def shoppingAPIUse(inputObj):
-    shoppingAPI = get_session()
-    #print("getsession, ",shoppingAPI)
-    time.sleep(1)
-    response = shoppingAPI.execute('GetMultipleItems', inputObj)
-    return response.dict()
-
 
 
 def getFromSheet():
@@ -293,7 +285,6 @@ def getGood(items):
             logger.exception("got exeption not ConnectionError")
             break
         else:
-
             if response.get('Item') is not None:
                 for i in range(len(response['Item'])):
                     items[_ + i]['QuantitySold'] = response['Item'][i].get('QuantitySold')
