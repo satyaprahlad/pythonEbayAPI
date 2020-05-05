@@ -110,6 +110,7 @@ def getGood(items):
             logger.exception("got exeption not ConnectionError")
             break
         else:
+            print(response)
             if response.get('Item') is not None:
                 for i in range(len(response['Item'])):
                     items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')

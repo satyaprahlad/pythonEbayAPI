@@ -293,9 +293,16 @@ def getGood(items):
             logger.exception("got exeption not ConnectionError")
             break
         else:
-            for i in range(len(response['Item'])):
-                items[_ + i]['QuantitySold'] = response['Item'][i].get('QuantitySold')
-                items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
+
+            if response.get('Item') is not None:
+                for i in range(len(response['Item'])):
+                    items[_ + i]['QuantitySold'] = response['Item'][i].get('QuantitySold')
+                    items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
+            else:
+                print("Din't get any response due to time out.")
+                print(response.get('Errors'))
+                break
+
         _ = j
         # print("remaining items to process ",len(items)-i)
     # correcting duration to start and end dates diff
