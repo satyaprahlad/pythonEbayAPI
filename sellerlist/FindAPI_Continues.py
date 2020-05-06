@@ -35,7 +35,7 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     allRowsValues = [
                      ['','','','Seller Details : '+str(sellerIdFromSheet)+' For '+str(noOfMonths)+' Month(s)','','','Sheet Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()],
                      [],
-                     ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Viewed','TimeLeft To de list' ]]
+                     ['Title', 'Price', 'Watch','Sold', 'CategoryID','Duration', 'Viewed','TimeLeft before Listing Ends' ]]
 
     if (error is not None):
         errors = ['Failed to update sheet with reason : ', str(error), ' at ', str(datetime.datetime.now())]
@@ -138,8 +138,10 @@ def retrieveFromSecondPage(inputObj):
 
 def main():
     while True:
-        ebayFunction()
-        time.sleep(100)
+        try:
+            ebayFunction()
+            time.sleep(100)
+        except:logger.exception("Exception at processing")
 
 def ebayFunction():
     api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
@@ -177,7 +179,7 @@ def ebayFunction():
 
         "paginationInput": {
             "entriesPerPage": "100",
-            "pageNumber": "1"
+            "pageNumber": "0"
 
         }
     }
@@ -206,7 +208,7 @@ def ebayFunction():
             logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
             response = api.execute('findItemsAdvanced', inputObj).dict()
 
-            if response["searchResult"] is None:
+            if response.get("searchResult") is None:
                 logger.info(f"no result at i {i}")
                 break
             currentItems = response["searchResult"]["item"]
@@ -253,15 +255,23 @@ def ebayFunction():
         toc=time.perf_counter()
         logger.info(f"search took {toc-tic} time with items: {len(items)}")
         logger.info("now adding details like hit count and quantity sold")
-        getGood(items)
+        items=getGood(items)
 
         updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
         logger.info("completed")
 
 def getGood(items):
     logger.info("shopping")
+    itemIdSet = set(map(lambda x: x['itemId'], items))
+    noDuplicates = list()
+    print("set size is ",len(itemIdSet))
+    for x in items:
+        if x['itemId'] in itemIdSet:
+            itemIdSet.remove(x['itemId'])
+            noDuplicates.append(x)
 
-
+    logger.info(f"no of duplicates: {len(items)-len(noDuplicates)}")
+    items = noDuplicates
     inputObj = {"ItemID": [], "IncludeSelector": "Details"}
     inputObjects = []
     j = 0
@@ -313,12 +323,14 @@ def getGood(items):
                 break
 
         _ = j
+
         # print("remaining items to process ",len(items)-i)
     # correcting duration to start and end dates diff
         # print("duration is , ",item['DurationCalc'])
     toc = time.perf_counter()
     logger.info(f"stopwatch: {toc-tic}")
-    logger.info(f"lengthof input {len(inputObjects)}")
+    #logger.info(f"lengthof input {len(inputObjects)}")
+    return items
 
 
 if __name__ == "__main__":

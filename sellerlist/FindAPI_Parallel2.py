@@ -305,6 +305,7 @@ def getGood(items):
                 break
 
         _ = j
+        return items
         # print("remaining items to process ",len(items)-i)
     # correcting duration to start and end dates diff
         # print("duration is , ",item['DurationCalc'])

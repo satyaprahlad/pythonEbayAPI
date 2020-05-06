@@ -26,7 +26,7 @@ def updateToGSheet( data,error=None):
     sheet1 = client.open("OrderInformationsWork").worksheet("aroundmountain")
     eachRow1 = ['Title', 'Price', 'Watch',
                'Sold', 'CategoryID',
-               'Duration','Viewed','','Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()]
+               'Duration','Viewed','TimeLeft before Listing Ends','Last Updated at: '+str(datetime.datetime.now())+' by '+getpass.getuser()]
     #heading
     if (error is not None):
         errors=['Failed to update sheet with reason : '+str(error)+' at '+str(datetime.datetime.now())]
@@ -41,7 +41,7 @@ def updateToGSheet( data,error=None):
     for eachItem in data:
         #print(eachItem)
         eachRow = [eachItem['Title'], float(eachItem['SellingStatus']['CurrentPrice']['value']), int(eachItem['WatchCount']),
-                   int(eachItem['SellingStatus']['QuantitySold']), int(eachItem['PrimaryCategory']['CategoryID']), eachItem['ListingDuration'],eachItem['HitCount']]
+                   int(eachItem['SellingStatus']['QuantitySold']), int(eachItem['PrimaryCategory']['CategoryID']), eachItem['ListingDuration'],eachItem['HitCount'],eachItem['TimeLeft']]
         allRowsValues.append(eachRow)
 
     #print("all rows are ",allRowsValues)
@@ -54,7 +54,7 @@ def updateToGSheet( data,error=None):
         "blue": 0.0
     }}})
 
-    sheet1.format("H1:I1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    sheet1.format("K2:L1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 0.0,
         "green": 1.0,
         "blue": 0.0
@@ -78,6 +78,14 @@ def get_session():
 
 def getGood(items):
     logger.debug("shopping")
+    itemIdSet=set(map(lambda x:x['ItemID'],items))
+    noDuplicates=list()
+    for x in items:
+        if x['ItemID'] in itemIdSet:
+            itemIdSet.remove(x['ItemID'])
+            noDuplicates.append(x)
+    items=noDuplicates
+    logger.info(f"no of duplicates: {len(items) - len(noDuplicates)}")
 
     inputObj = {"ItemID": [], "IncludeSelector": "Details"}
     inputObjects = []
@@ -114,7 +122,7 @@ def getGood(items):
             logger.exception("got exeption not ConnectionError")
             break
         else:
-            print(response)
+            #print(response)
             if type(response.get('Item'))==list:
                 for i in range(len(response['Item'])):
                     items[_ + i]['HitCount'] = response['Item'][i].get('HitCount')
@@ -129,7 +137,7 @@ def getGood(items):
     toc = time.perf_counter()
     logger.debug(f"stopwatch: {toc-tic}")
     logger.debug(f"lengthof input {len(inputObjects)}")
-
+    return items
 
 
 def main():
@@ -165,7 +173,8 @@ def main():
                                "PaginationResult",
                                "itemId",
                                "HitCount",
-                               "HitCounter"
+                               "HitCounter",
+                               "TimeLeft"
                            ],
                            "Pagination": {
                                "EntriesPerPage": "100",
@@ -209,7 +218,7 @@ def main():
 
         #print(items,file=open("1.txt","w"))
         print("setting hitcount etc")
-        getGood(items)
+        items=getGood(items)
         updateToGSheet(items)
     except Exception as error:
         traceback.print_exc()
