@@ -48,7 +48,7 @@ def updateToGSheet( data,error=None):
     sheet1.clear()
     sheet1.append_rows(allRowsValues)
 
-    sheet1.format("A1:G1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    sheet1.format("A1:H1", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
         "red": 1.0,
         "green": 0.0,
         "blue": 0.0
@@ -60,11 +60,11 @@ def updateToGSheet( data,error=None):
         "blue": 0.0
     }}})
     #reset format
-    sheet1.format("H2:I2", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
-        "red": 0.0,
-        "green": 0.0,
-        "blue": 0.0
-    }}})
+    # sheet1.format("H2:I2", {"textFormat": {"bold": True, "fontSize": 12, "foregroundColor": {
+    #     "red": 0.0,
+    #     "green": 0.0,
+    #     "blue": 0.0
+    # }}})
 
 
 def get_session():

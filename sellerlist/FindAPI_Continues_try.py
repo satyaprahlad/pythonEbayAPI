@@ -115,7 +115,7 @@ def getFromSheet():
     client = gspread.authorize(creds)
 
     input = client.open("OrderInformationsWork").worksheet("Input")
-    sellerIdFromSheet = input.cell(4,2).value.strip()
+    sellerIdFromSheet = input.cell(4,3).value.strip()
     noOfMonths = int(input.cell(5,2).value)
     return (sellerIdFromSheet,noOfMonths)
 
@@ -139,16 +139,16 @@ def retrieveFromSecondPage(inputObj):
 def main():
     while True:
         try:
+            tic=time.perf_counter()
             ebayFunction()
-            time.sleep(100)
+            toc=time.perf_counter()
+            logger.info(f"total time taken: {toc-tic}")
+            time.sleep(60)
         except:logger.exception("Exception at processing")
 
-def ebayFunction():
-    api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
-                  devid="6c042b69-e90f-4897-9045-060858248665",
-                  certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
-                  )
 
+
+def eachMonthRunner(eachMonthInfo):
     items = list()
 
     inputObj = {
@@ -184,88 +184,106 @@ def ebayFunction():
         }
     }
 
+    startDateTo = eachMonthInfo.get('startDateTo')
+    sellerIdFromSheet=eachMonthInfo.get('sellerIdFromSheet')
+    startDateFrom = startDateTo - datetime.timedelta(6)
 
-    startDateTo = datetime.datetime.now()
-    startDateFrom = startDateTo - datetime.timedelta(15)
-    sellerIdFromSheet, noOfMonths = getFromSheet();
-    logger.info(f"seller id fro sheet  {sellerIdFromSheet}")
-    logger.info(f"no of months {str(noOfMonths)}")
-    if sellerIdFromSheet is not None and len(sellerIdFromSheet) > 0:
 
-        inputObj["itemFilter"]["value"] = sellerIdFromSheet
+    inputObj["itemFilter"]["value"] = sellerIdFromSheet
         # queryRepeats = int(noOfMonths / 3)
         # if (noOfMonths == 1):  # one month only
         #     queryRepeats = queryRepeats + 1
         #     startDateFrom = startDateTo - datetime.timedelta(30)
         # elif (queryRepeats == 4):  # need to include (4*90) obvious and 6 days for a year
         #     queryRepeats = 5
-        tic=time.perf_counter()
-        for i in range(int(noOfMonths*2)):
-            inputObj["StartTimeTo"] = startDateTo
+        tic = time.perf_counter()
+
+        inputObj["StartTimeTo"] = startDateTo
+        inputObj["StartTimeFrom"] = startDateFrom
+        interval=datetime.timedelta(startDateTo,startDateFrom)
+        inputObj["paginationInput"]["pageNumber"] = 1
+        #logger.info(f"iteration number ")
+        logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
+
+        items=list()a
+
+        while(interval>0):
             inputObj["StartTimeFrom"] = startDateFrom
-            inputObj["paginationInput"]["pageNumber"] = 1
-            logger.info(f"iteration number {i}")
-            logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
-            response = api.execute('findItemsAdvanced', inputObj)
-            #print(response)
-            response=response.dict()
-            #print(inputObj)
-
+            response = getFindingApiSession().execute('findItemsAdvanced', inputObj).dict()
             if response.get("searchResult") is None:
-                logger.info(f"no result at i {i}")
-                break
-            elif response.get("searchResult").get("item") is None:
-                logger.info(f"no result:at {i}")
-                break
-            print(response["searchResult"])
+                logger.info(f"no result at month: {startDateTo}")
+                return items
             currentItems = response["searchResult"]["item"]
-            items.extend(currentItems)
-                # print("lenght of items , ", len(items))
-                # print("page number is ", response["PageNumber"])
-                # print("remaining pages", response["PaginationResult"])
-                # print("has more number ", response["HasMoreItems"])
+                        # print("lenght of items , ", len(items))
+            # print("page number is ", response["PageNumber"])
+            # print("remaining pages", response["PaginationResult"])
+            # print("has more number ", response["HasMoreItems"])
             remainingPages = int(response["paginationOutput"]["totalPages"]) - int(
-                    response["paginationOutput"]["pageNumber"])
-
-            if remainingPages == 0:
+                response["paginationOutput"]["pageNumber"])
+            if remainingPages <= 99:
                 break
-            logger.info(f"remaining pages: {remainingPages}")
+            if remainingPages > 99:interval=int(interval/2)
+
+        interval= interval if interval>0 else 1
+
+        logger.info(f"remaining pages: {remainingPages}")
             # query allows only upto max 100 pages
-            remainingPages=min(99,remainingPages)
-            multiThreadInputObjects=[copy.deepcopy(inputObj) for _ in range(remainingPages)]
+        remainingPages = min(99, remainingPages)
+        multiThreadInputObjects = [copy.deepcopy(inputObj) for _ in range(remainingPages)]
             for i in range(remainingPages):
-                multiThreadInputObjects[i]["paginationInput"]["pageNumber"]=i+2
-            #logger.debug(multiThreadInputObjects)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max(5,remainingPages/20)) as executor:
-                searchResults=[]
-                searchResults=executor.map(retrieveFromSecondPage,multiThreadInputObjects)
+                multiThreadInputObjects[i]["paginationInput"]["pageNumber"] = i + 2
+            # logger.debug(multiThreadInputObjects)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max(5, remainingPages / 20)) as executor:
+                searchResults = []
+                searchResults = executor.map(retrieveFromSecondPage, multiThreadInputObjects)
                 logger.info("underr multithread")
                 for searchResult in searchResults:
-
                     items.extend(searchResult["searchResult"]["item"])
                 executor.shutdown()
 
             # if i == 3:
             #     startDateFrom = startDateFrom - datetime.timedelta(6)  # just for last 6 days in 365/366  days
             # else:
-            startDateFrom = startDateFrom - datetime.timedelta(15)
-            startDateTo = startDateTo - datetime.timedelta(15)
+            startDateFrom = startDateFrom - datetime.timedelta(6)
+            startDateTo = startDateTo - datetime.timedelta(6)
 
-        # print(items, file=open("1.txt", "w"))
+
+def ebayFunction():
+    api = Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
+                  devid="6c042b69-e90f-4897-9045-060858248665",
+                  certid="PRD-bce464fbd03b-273a-4416-a299-7d41"
+                  )
+    sellerIdFromSheet, noOfMonths = getFromSheet();
+    logger.info(f"seller id fro sheet  {sellerIdFromSheet}")
+    logger.info(f"no of months {str(noOfMonths)}")
+    items=list()
+    eachMonthInputs=list()
+    for _ in noOfMonths:
+        eachMonthInput=dict()
+        eachMonthInput.__setitem__("startDateTo",datetime.datetime.now()-datetime.timedelta(_*30))
+        eachMonthInput.__setitem__("sellerIdFromSheet",sellerIdFromSheet)
+    eachMonthInputs.append(eachMonthInput)
+    tic=time.perf_counter()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=noOfMonths) as executor:
+        results=executor.map(eachMonthRunner,eachMonthInputs)
+        for result in results:
+            items.extend(result)
+
+    # print(items, file=open("1.txt", "w"))
         # setting duration count
-        for item in items:
+    for item in items:
             # print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
-            startTime = datetime.datetime.strptime(item['listingInfo']['startTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
-            endTime = datetime.datetime.strptime(item['listingInfo']['endTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        startTime = datetime.datetime.strptime(item['listingInfo']['startTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        endTime = datetime.datetime.strptime(item['listingInfo']['endTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
             #item['DurationCalc']= (endTime.__sub__(startTime)).days
-            item['DurationCalc'] = (endTime.__sub__(startTime)).days
-        toc=time.perf_counter()
-        logger.info(f"search took {toc-tic} time with items: {len(items)}")
-        logger.info("now adding details like hit count and quantity sold")
-        items=getGood(items)
+        item['DurationCalc'] = (endTime.__sub__(startTime)).days
+    toc=time.perf_counter()
+    logger.info(f"search took {toc-tic} time with items: {len(items)}")
+    logger.info("now adding details like hit count and quantity sold")
+    items=getGood(items)
 
-        updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
-        logger.info("completed")
+    updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
+    logger.info("completed")
 
 def getGood(items):
     logger.info("shopping")
