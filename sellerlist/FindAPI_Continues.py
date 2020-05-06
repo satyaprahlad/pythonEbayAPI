@@ -217,7 +217,7 @@ def ebayFunction():
             elif response.get("searchResult").get("item") is None:
                 logger.info(f"no result:at {i}")
                 break
-            print(response["searchResult"])
+            #print(response["searchResult"])
             currentItems = response["searchResult"]["item"]
             items.extend(currentItems)
                 # print("lenght of items , ", len(items))
