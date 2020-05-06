@@ -207,9 +207,9 @@ def ebayFunction():
             logger.info(f"iteration number {i}")
             logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
             response = api.execute('findItemsAdvanced', inputObj)
-            print(response)
+            #print(response)
             response=response.dict()
-            print(inputObj)
+            #print(inputObj)
 
             if response.get("searchResult") is None:
                 logger.info(f"no result at i {i}")
