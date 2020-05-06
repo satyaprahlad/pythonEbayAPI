@@ -140,7 +140,7 @@ def main():
     while True:
         try:
             ebayFunction()
-            time.sleep(60)
+            time.sleep(100)
         except:logger.exception("Exception at processing")
 
 def ebayFunction():
@@ -206,11 +206,18 @@ def ebayFunction():
             inputObj["paginationInput"]["pageNumber"] = 1
             logger.info(f"iteration number {i}")
             logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
-            response = api.execute('findItemsAdvanced', inputObj).dict()
+            response = api.execute('findItemsAdvanced', inputObj)
+            print(response)
+            response=response.dict()
+            print(inputObj)
 
             if response.get("searchResult") is None:
                 logger.info(f"no result at i {i}")
                 break
+            elif response.get("searchResult").get("item") is None:
+                logger.info(f"no result:at {i}")
+                break
+            print(response["searchResult"])
             currentItems = response["searchResult"]["item"]
             items.extend(currentItems)
                 # print("lenght of items , ", len(items))
