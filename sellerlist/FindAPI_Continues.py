@@ -132,7 +132,7 @@ def getFindingApiSession():
 def retrieveFromSecondPage(inputObj):
     api=getFindingApiSession()
     response = api.execute('findItemsAdvanced', inputObj).dict()
-    logger.info(f" thread name {threading.currentThread().name } result is : {response}")
+    #logger.info(f" thread name {threading.currentThread().name } result is : {response}")
     return response
 
 
@@ -140,7 +140,7 @@ def main():
     while True:
         try:
             ebayFunction()
-            time.sleep(100)
+            time.sleep(60)
         except:logger.exception("Exception at processing")
 
 def ebayFunction():
