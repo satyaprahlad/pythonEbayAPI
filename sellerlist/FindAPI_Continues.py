@@ -16,14 +16,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 thread_local=threading.local()
 
-#logging.basicConfig(filename="FindAPI.log",
+logging.basicConfig(filename="FindAPI.log",
 
- #                   filemode='w')
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+                   filemode='w')
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # Creating an object
 logger = logging.getLogger()
 # Setting the threshold of logger to DEBUG
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
@@ -49,7 +49,8 @@ def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     for eachItem in data:
         #print(eachItem)
         watchCont=0 if eachItem['listingInfo'].get('watchCount') is None else int(eachItem['listingInfo']['watchCount'])
-        QuantitySold=0 if eachItem.get('QuantitySold') is None else int(eachItem['QuantitySold'])
+        QuantitySold=0 if eachItem.get(''
+                                       '') is None else int(eachItem['QuantitySold'])
         HitCount=0 if eachItem.get('HitCount') is None else int(eachItem['HitCount'])
         eachRow = [eachItem.get('title'), float(eachItem['sellingStatus']['currentPrice']['value']),
                    watchCont,
@@ -132,12 +133,12 @@ def getFindingApiSession():
 def retrieveFromSecondPage(inputObj):
     api=getFindingApiSession()
     response = api.execute('findItemsAdvanced', inputObj).dict()
-    #logger.info(f" thread name {threading.currentThread().name } result is : {response}")
+    #logger.debug(f" thread name {threading.currentThread().name } result is : {response}")
     return response
 
 
 def main():
-    while True:
+
         try:
             ebayFunction()
             time.sleep(100)
@@ -188,8 +189,8 @@ def ebayFunction():
     startDateTo = datetime.datetime.now()
     startDateFrom = startDateTo - datetime.timedelta(15)
     sellerIdFromSheet, noOfMonths = getFromSheet();
-    logger.info(f"seller id fro sheet  {sellerIdFromSheet}")
-    logger.info(f"no of months {str(noOfMonths)}")
+    logger.debug(f"seller id fro sheet  {sellerIdFromSheet}")
+    logger.debug(f"no of months {str(noOfMonths)}")
     if sellerIdFromSheet is not None and len(sellerIdFromSheet) > 0:
 
         inputObj["itemFilter"]["value"] = sellerIdFromSheet
@@ -204,18 +205,18 @@ def ebayFunction():
             inputObj["StartTimeTo"] = startDateTo
             inputObj["StartTimeFrom"] = startDateFrom
             inputObj["paginationInput"]["pageNumber"] = 1
-            logger.info(f"iteration number {i}")
-            logger.info(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
+            logger.debug(f"iteration number {i}")
+            logger.debug(f"sad{inputObj['StartTimeTo']} and {inputObj['StartTimeFrom']}")
             response = api.execute('findItemsAdvanced', inputObj)
             #print(response)
             response=response.dict()
             #print(inputObj)
 
             if response.get("searchResult") is None:
-                logger.info(f"no result at i {i}")
+                logger.debug(f"no result at i {i}")
                 break
             elif response.get("searchResult").get("item") is None:
-                logger.info(f"no result:at {i}")
+                logger.debug(f"no result:at {i}")
                 break
             #print(response["searchResult"])
             currentItems = response["searchResult"]["item"]
@@ -229,7 +230,7 @@ def ebayFunction():
 
             if remainingPages == 0:
                 break
-            logger.info(f"remaining pages: {remainingPages}")
+            logger.debug(f"remaining pages: {remainingPages}")
             # query allows only upto max 100 pages
             remainingPages=min(99,remainingPages)
             multiThreadInputObjects=[copy.deepcopy(inputObj) for _ in range(remainingPages)]
@@ -239,7 +240,7 @@ def ebayFunction():
             with concurrent.futures.ThreadPoolExecutor(max_workers=max(5,remainingPages/20)) as executor:
                 searchResults=[]
                 searchResults=executor.map(retrieveFromSecondPage,multiThreadInputObjects)
-                logger.info("underr multithread")
+                logger.debug("underr multithread")
                 for searchResult in searchResults:
 
                     items.extend(searchResult["searchResult"]["item"])
@@ -260,15 +261,15 @@ def ebayFunction():
             #item['DurationCalc']= (endTime.__sub__(startTime)).days
             item['DurationCalc'] = (endTime.__sub__(startTime)).days
         toc=time.perf_counter()
-        logger.info(f"search took {toc-tic} time with items: {len(items)}")
-        logger.info("now adding details like hit count and quantity sold")
+        logger.debug(f"search took {toc-tic} time with items: {len(items)}")
+        logger.debug("now adding details like hit count and quantity sold")
         items=getGood(items)
 
         updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
-        logger.info("completed")
+        logger.debug("completed")
 
 def getGood(items):
-    logger.info("shopping")
+    logger.debug("shopping")
     itemIdSet = set(map(lambda x: x['itemId'], items))
     noDuplicates = list()
     print("set size is ",len(itemIdSet))
@@ -277,7 +278,7 @@ def getGood(items):
             itemIdSet.remove(x['itemId'])
             noDuplicates.append(x)
 
-    logger.info(f"no of duplicates: {len(items)-len(noDuplicates)}")
+    logger.debug(f"no of duplicates: {len(items)-len(noDuplicates)}")
     items = noDuplicates
     inputObj = {"ItemID": [], "IncludeSelector": "Details"}
     inputObjects = []
@@ -290,10 +291,10 @@ def getGood(items):
         item['DurationCalc'] = (endTime.__sub__(startTime)).days
         item['QuantitySold']=0
         item['HitCount']=0
-        logger.info(item['itemId'])
+        logger.debug(item['itemId'])
     tic = time.perf_counter()
     while _ < (len(items)):
-        logger.info(f"{_} out of {len(items)}")
+        logger.debug(f"{_} out of {len(items)}")
         if _ + 20 > len(items):
             j = len(items)
         else:
@@ -306,7 +307,7 @@ def getGood(items):
         # print("response after executing multiple api call: ",response)
 
         except ConnectionError as err:
-            logger.info("got exception while getmultipleitems",exc_info=True)
+            logger.debug("got exception while getmultipleitems",exc_info=True)
             print("exception at connection",err)
             print(err.response().dict())
             break
@@ -335,8 +336,8 @@ def getGood(items):
     # correcting duration to start and end dates diff
         # print("duration is , ",item['DurationCalc'])
     toc = time.perf_counter()
-    logger.info(f"stopwatch: {toc-tic}")
-    #logger.info(f"lengthof input {len(inputObjects)}")
+    logger.debug(f"stopwatch: {toc-tic}")
+    #logger.debug(f"lengthof input {len(inputObjects)}")
     return items
 
 

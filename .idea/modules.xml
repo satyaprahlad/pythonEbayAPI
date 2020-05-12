@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ebaySeller.iml" filepath="$PROJECT_DIR$/.idea/ebaySeller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ebayWebApp1/.idea/ebayWebApp1.iml" filepath="$PROJECT_DIR$/../ebayWebApp1/.idea/ebayWebApp1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../pythonWeb/.idea/pythonWeb.iml" filepath="$PROJECT_DIR$/../pythonWeb/.idea/pythonWeb.iml" />
     </modules>
   </component>
 </project>
