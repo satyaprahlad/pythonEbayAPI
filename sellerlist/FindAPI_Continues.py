@@ -25,7 +25,7 @@ logger = logging.getLogger()
 # Setting the threshold of logger to DEBUG
 logger.setLevel(logging.DEBUG)
 
-def updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
+def __updateToGSheet(data ,error=None,sellerIdFromSheet="",noOfMonths="0"):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name("ebayPractice-f9627f3e653b.json", scope)
@@ -122,7 +122,7 @@ def getFromSheet():
 
 
 thread_local_FindingApi_Session=threading.local()
-def getFindingApiSession():
+def __getFindingApiSession():
     if not hasattr(thread_local_FindingApi_Session,"api"):
         thread_local_FindingApi_Session.api=Finding(config_file=None, domain='svcs.ebay.com', appid="SatyaPra-MyEBPrac-PRD-abce464fb-dd2ae5fe",
                   devid="6c042b69-e90f-4897-9045-060858248665",
@@ -130,8 +130,8 @@ def getFindingApiSession():
                   )
     return thread_local_FindingApi_Session.api
 
-def retrieveFromSecondPage(inputObj):
-    api=getFindingApiSession()
+def __retrieveFromSecondPage(inputObj):
+    api=__getFindingApiSession()
     response = api.execute('findItemsAdvanced', inputObj).dict()
     #logger.debug(f" thread name {threading.currentThread().name } result is : {response}")
     return response
@@ -239,21 +239,18 @@ def ebayFunction():
             #logger.debug(multiThreadInputObjects)
             with concurrent.futures.ThreadPoolExecutor(max_workers=max(5,remainingPages/20)) as executor:
                 searchResults=[]
-                searchResults=executor.map(retrieveFromSecondPage,multiThreadInputObjects)
+                searchResults=executor.map(__retrieveFromSecondPage,multiThreadInputObjects)
                 logger.debug("underr multithread")
                 for searchResult in searchResults:
 
                     items.extend(searchResult["searchResult"]["item"])
                 executor.shutdown()
 
-            # if i == 3:
-            #     startDateFrom = startDateFrom - datetime.timedelta(6)  # just for last 6 days in 365/366  days
-            # else:
             startDateFrom = startDateFrom - datetime.timedelta(15)
             startDateTo = startDateTo - datetime.timedelta(15)
 
-        # print(items, file=open("1.txt", "w"))
-        # setting duration count
+
+
         for item in items:
             # print("start time and ",item['listingInfo']['startTime']," end time; ", item['listingInfo']['endTime'])
             startTime = datetime.datetime.strptime(item['listingInfo']['startTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -263,12 +260,12 @@ def ebayFunction():
         toc=time.perf_counter()
         logger.debug(f"search took {toc-tic} time with items: {len(items)}")
         logger.debug("now adding details like hit count and quantity sold")
-        items=getGood(items)
+        items=__getGood(items)
 
-        updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
+        __updateToGSheet(items, None, sellerIdFromSheet, noOfMonths)
         logger.debug("completed")
 
-def getGood(items):
+def __getGood(items):
     logger.debug("shopping")
     itemIdSet = set(map(lambda x: x['itemId'], items))
     noDuplicates = list()
